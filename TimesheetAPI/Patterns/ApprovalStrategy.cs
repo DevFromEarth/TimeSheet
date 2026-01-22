@@ -2,7 +2,6 @@ using TimesheetAPI.DTOs;
 
 namespace TimesheetAPI.Patterns;
 
-// Strategy Pattern for Timesheet Approval
 public interface IApprovalStrategy
 {
     Task<bool> CanApproveAsync(int timesheetId, int approverId);

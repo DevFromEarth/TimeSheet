@@ -9,16 +9,12 @@ using TimesheetAPI.Patterns;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ------------------------------------
 // Add services to the container
-// ------------------------------------
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// ------------------------------------
 // CORS
-// ------------------------------------
 builder.Services.AddCors(options =>
 {
 	options.AddPolicy("AllowAngularApp", policy =>
@@ -28,46 +24,33 @@ builder.Services.AddCors(options =>
 			  .AllowCredentials());
 });
 
-// ------------------------------------
 // Database
-// ------------------------------------
 builder.Services.AddDbContext<TimesheetDbContext>(options =>
 	options.UseSqlServer(
-		"Server=localhost,1433;Database=Timesheet;User Id=sa;Password=Password;TrustServerCertificate=True",
+		"Server=localhost,1433;Database=Timesheet;User Id=sa;Password=Srm@12345;TrustServerCertificate=True",
 		sqlOptions => sqlOptions.EnableRetryOnFailure()
 	)
 );
 
-// ------------------------------------
 // AutoMapper
-// ------------------------------------
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-// ------------------------------------
 // Repositories & Unit of Work
-// ------------------------------------
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ITimesheetRepository, TimesheetRepository>();
 builder.Services.AddScoped<IProjectAssignmentRepository, ProjectAssignmentRepository>();
 
-// ------------------------------------
 // Services
-// ------------------------------------
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IProjectAssignmentService, ProjectAssignmentService>();
 builder.Services.AddScoped<ITimesheetService, TimesheetService>();
 builder.Services.AddScoped<IReportService, ReportService>();
-builder.Services.AddScoped<TokenService>(); // ✅ REQUIRED for JWT
 
-// ------------------------------------
 // Design Patterns
-// ------------------------------------
 builder.Services.AddScoped<IApprovalStrategy, ManagerApprovalStrategy>();
 builder.Services.AddScoped<IReportFactory, ReportFactory>();
 
-// ------------------------------------
 // JWT Authentication
-// ------------------------------------
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var jwtKey = "YourSuperSecureAndLongSecretKey123!";
 
@@ -91,14 +74,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// ------------------------------------
 // Build App
-// ------------------------------------
 var app = builder.Build();
 
-// ------------------------------------
 // Middleware Pipeline
-// ------------------------------------
 if (app.Environment.IsDevelopment())
 {
 	app.UseSwagger();
