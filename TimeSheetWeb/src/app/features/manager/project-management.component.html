@@ -1,0 +1,125 @@
+<div class="container">
+  <div class="header">
+    <h2>Project Management</h2>
+    <button class="btn-primary" (click)="openCreateForm()">
+      + New Project
+    </button>
+  </div>
+
+  <!-- Create/Edit Project Form -->
+  @if (showForm) {
+  <div class="form-section">
+    <h3>{{ isEditMode ? 'Edit Project' : 'Create New Project' }}</h3>
+    <form [formGroup]="projectForm" (submit)="onSubmit()">
+      <div class="form-group">
+        <label for="projectCode">Project Code*</label>
+        <input type="text" id="projectCode" formControlName="projectCode" required placeholder="e.g., PROJ001" />
+      </div>
+
+      <div class="form-group">
+        <label for="projectName">Project Name*</label>
+        <input type="text" id="projectName" formControlName="projectName" required placeholder="Enter project name" />
+      </div>
+
+      <div class="form-group">
+        <label for="clientName">Client Name*</label>
+        <input type="text" id="clientName" formControlName="clientName" required placeholder="Enter client name" />
+      </div>
+
+      <div class="form-group checkbox">
+        <input type="checkbox" id="isBillable" formControlName="isBillable" />
+        <label for="isBillable">Billable Project</label>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-success" [disabled]="!projectForm.valid">
+          {{ isEditMode ? 'Update' : 'Create' }} Project
+        </button>
+        <button type="button" class="btn-secondary" (click)="closeForm()">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+  }
+
+  <!-- Projects List -->
+  @else {
+  <div class="projects-section">
+    <div class="search-filter">
+      <input type="text" placeholder="Search by project code or name..." (input)="onSearch($any($event.target).value)"
+        class="search-input" />
+      <div class="filter-options">
+        <label>
+          <input type="checkbox" [checked]="filterActive" (change)="onFilterChange($any($event.target).checked)" />
+          Active Only
+        </label>
+      </div>
+    </div>
+
+    @if (loading) {
+    <div class="loading">
+      Loading projects...
+    </div>
+    }
+
+    @if (error) {
+    <div class="error">
+      {{ error }}
+      <button (click)="loadProjects()" class="btn-retry">Retry</button>
+    </div>
+    }
+
+    @if (!loading && filteredProjects.length > 0) {
+    <div class="projects-list">
+      <table>
+        <thead>
+          <tr>
+            <th>Project Code</th>
+            <th>Project Name</th>
+            <th>Client</th>
+            <th>Billable</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (project of filteredProjects; track project.id) {
+          <tr [class.inactive]="!project.isActive">
+            <td>{{ project.projectCode }}</td>
+            <td>{{ project.projectName }}</td>
+            <td>{{ project.clientName }}</td>
+            <td>
+              <span class="badge" [class.billable]="project.isBillable">
+                {{ project.isBillable ? 'Yes' : 'No' }}
+              </span>
+            </td>
+            <td>
+              <span class="status" [class.active]="project.isActive" [class.inactive]="!project.isActive">
+                {{ project.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td class="actions">
+              <button class="btn-edit" (click)="editProject(project)" title="Edit project">
+                Edit
+              </button>
+              <button class="btn-toggle" (click)="toggleProjectStatus(project)"
+                [title]="project.isActive ? 'Deactivate' : 'Activate'">
+                {{ project.isActive ? 'Deactivate' : 'Activate' }}
+              </button>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+
+    @if (!loading && filteredProjects.length === 0 && !error) {
+    <div class="no-results">
+      <p>No projects found.</p>
+    </div>
+    }
+  </div>
+  }
+</div>
