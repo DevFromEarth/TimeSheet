@@ -1,0 +1,159 @@
+<div class="reports-dashboard-container">
+  <div class="reports-header">
+    <h1>Reports Dashboard</h1>
+    <p class="subtitle">Track employee hours, project allocation, and billing metrics</p>
+  </div>
+
+  <!-- Error Message -->
+  @if (error) {
+  <div class="error-alert">
+    <span class="error-icon">⚠️</span>
+    <span>{{ error }}</span>
+  </div>
+  }
+
+  <!-- Filter Section -->
+  <div class="filter-section">
+    <form [formGroup]="filterForm" (ngSubmit)="loadReports()">
+      <div class="filter-grid">
+        <div class="form-group">
+          <label for="startDate">Start Date</label>
+          <input type="date" id="startDate" formControlName="startDate" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="endDate">End Date</label>
+          <input type="date" id="endDate" formControlName="endDate" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="userId">Employee ID (Optional)</label>
+          <input type="number" id="userId" formControlName="userId" class="form-control"
+            placeholder="Leave blank for all employees">
+        </div>
+
+        <div class="form-group">
+          <label for="projectId">Project ID (Optional)</label>
+          <input type="number" id="projectId" formControlName="projectId" class="form-control"
+            placeholder="Leave blank for all projects">
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="isLoading">
+          {{ isLoading ? 'Loading...' : 'Generate Report' }}
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="resetFilters()" [disabled]="isLoading">
+          Reset Filters
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Billable Summary Cards -->
+  @if (billableSummary && !isLoading) {
+  <div class="summary-section">
+    <h2>Billing Summary</h2>
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="card-label">Total Hours</div>
+        <div class="card-value">{{ billableSummary.totalHours | number: '1.2-2' }}</div>
+      </div>
+      <div class="summary-card billable">
+        <div class="card-label">Billable Hours</div>
+        <div class="card-value">{{ billableSummary.totalBillableHours | number: '1.2-2' }}</div>
+      </div>
+      <div class="summary-card non-billable">
+        <div class="card-label">Non-Billable Hours</div>
+        <div class="card-value">{{ billableSummary.totalNonBillableHours | number: '1.2-2' }}</div>
+      </div>
+      <div class="summary-card percentage">
+        <div class="card-label">Billable Percentage</div>
+        <div class="card-value">{{ billableSummary.billablePercentage | number: '1.2-2' }}%</div>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Employee Hours Summary Table -->
+  @if (employeeHoursSummary.length > 0 && !isLoading) {
+  <div class="table-section">
+    <h2>Employee Hours Summary</h2>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee Name</th>
+            <th>Total Hours</th>
+            <th>Billable Hours</th>
+            <th>Non-Billable Hours</th>
+            <th>Billable %</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (employee of employeeHoursSummary; track employee.userId) {
+          <tr class="employee-row">
+            <td class="employee-name">{{ employee.userName }}</td>
+            <td class="text-right">{{ employee.totalHours | number: '1.2-2' }}</td>
+            <td class="text-right billable-cell">{{ employee.billableHours | number: '1.2-2' }}</td>
+            <td class="text-right non-billable-cell">{{ employee.nonBillableHours | number: '1.2-2' }}</td>
+            <td class="text-right">
+              {{ (employee.billableHours / employee.totalHours * 100) | number: '1.2-2' }}%
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="table-info">
+      Total Employees: {{ employeeHoursSummary.length }}
+    </div>
+  </div>
+  }
+
+  <!-- Project Hours Summary Table -->
+  @if (projectHoursSummary.length > 0 && !isLoading) {
+  <div class="table-section">
+    <h2>Project Hours Summary</h2>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Project Code</th>
+            <th>Project Name</th>
+            <th>Client</th>
+            <th>Total Hours</th>
+            <th>Billability</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (project of projectHoursSummary; track project.projectId) {
+          <tr class="project-row">
+            <td class="project-code">{{ project.projectCode }}</td>
+            <td class="project-name">{{ project.projectName }}</td>
+            <td class="client-name">{{ project.clientName }}</td>
+            <td class="text-right">{{ project.totalHours | number: '1.2-2' }}</td>
+            <td class="text-center">
+              <span class="badge" [class]="project.isBillable ? 'badge-success' : 'badge-warning'">
+                {{ project.isBillable ? 'Billable' : 'Non-Billable' }}
+              </span>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="table-info">
+      Total Projects: {{ projectHoursSummary.length }}
+    </div>
+  </div>
+  }
+
+  <!-- Empty State -->
+  @if (!isLoading && employeeHoursSummary.length === 0 && projectHoursSummary.length === 0) {
+  <div class="empty-state">
+    <div class="empty-icon">📊</div>
+    <p>No data available for the selected filters. Try adjusting your date range or filters.</p>
+  </div>
+  }
+</div>

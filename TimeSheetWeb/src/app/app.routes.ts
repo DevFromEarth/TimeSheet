@@ -35,7 +35,7 @@ export const routes: Routes = [
       },
       {
         path: 'reports',
-        loadComponent: () => import('./features/manager/reports.component').then(m => m.ReportsComponent)
+        loadComponent: () => import('./features/manager/reports-dashboard/reports-dashboard.component').then(m => m.ReportsDashboardComponent)
       },
       { path: '', redirectTo: 'projects', pathMatch: 'full' }
     ]
