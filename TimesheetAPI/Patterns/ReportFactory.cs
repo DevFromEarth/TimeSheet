@@ -3,7 +3,6 @@ using TimesheetAPI.Repositories;
 
 namespace TimesheetAPI.Patterns;
 
-// Factory Pattern for Report Generation
 public interface IReportFactory
 {
     IReport CreateReport(string reportType);

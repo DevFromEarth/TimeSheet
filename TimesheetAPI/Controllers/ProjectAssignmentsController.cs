@@ -15,22 +15,19 @@ public class ProjectAssignmentsController : ControllerBase
         _assignmentService = assignmentService;
     }
 
+
+	[HttpGet()]
+	public async Task<ActionResult<IEnumerable<ProjectAssignmentDto>>> GetProjectAssignments()
+	{
+        var assignments = await _assignmentService.GetActiveUserAssignmentsAsync();
+
+		return Ok(assignments);
+	}
+
     [HttpGet("user/{userId}")]
-    public async Task<ActionResult<IEnumerable<ProjectAssignmentDto>>> GetUserAssignments(
-        int userId,
-        [FromQuery] bool? activeOnly)
+    public async Task<ActionResult<IEnumerable<ProjectAssignmentDto>>> GetActiveAssignmentsByUserId(int userId)
     {
-        var assignments = activeOnly == true
-            ? await _assignmentService.GetActiveUserAssignmentsAsync(userId)
-            : await _assignmentService.GetUserAssignmentsAsync(userId);
-
-        return Ok(assignments);
-    }
-
-    [HttpGet("project/{projectId}")]
-    public async Task<ActionResult<IEnumerable<ProjectAssignmentDto>>> GetProjectAssignments(int projectId)
-    {
-        var assignments = await _assignmentService.GetProjectAssignmentsAsync(projectId);
+        var assignments = await _assignmentService.GetActiveUserAssignmentsAsync(userId);
         return Ok(assignments);
     }
 
@@ -40,7 +37,21 @@ public class ProjectAssignmentsController : ControllerBase
         try
         {
             var assignment = await _assignmentService.CreateAssignmentAsync(dto);
-            return CreatedAtAction(nameof(GetUserAssignments), new { userId = assignment.UserId }, assignment);
+			return NoContent();
+		}
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("batch")]
+    public async Task<ActionResult<IEnumerable<ProjectAssignmentDto>>> CreateAssignments([FromBody] List<CreateProjectAssignmentDto> dtos)
+    {
+        try
+        {
+            var assignments = await _assignmentService.CreateAssignmentsAsync(dtos);
+            return Ok(assignments);
         }
         catch (InvalidOperationException ex)
         {

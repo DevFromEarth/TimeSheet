@@ -1,0 +1,123 @@
+<div class="timesheet-approval">
+  <div class="header">
+    <h2>📋 Timesheet Approvals</h2>
+    <p class="subtitle">Review and approve/reject pending timesheets submitted by employees.</p>
+    <button class="btn-refresh" (click)="fetchPendingTimesheets()" [disabled]="loading" title="Refresh list">
+      🔄 Refresh
+    </button>
+  </div>
+
+  @if (loading && pendingTimesheets.length === 0) {
+  <div class="loading-state">
+    <p>⏳ Loading pending timesheets...</p>
+  </div>
+  }
+
+  @if (error) {
+  <div class="alert alert-error">
+    <strong>❌ Error:</strong> {{ error }}
+  </div>
+  }
+
+  @if (success) {
+  <div class="alert alert-success">
+    <strong>✓ Success:</strong> {{ success }}
+  </div>
+  }
+
+  @if (pendingTimesheets.length > 0) {
+  <div class="table-wrapper">
+    <table class="timesheets-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Project</th>
+          <th>Date</th>
+          <th>Hours</th>
+          <th>Description</th>
+          <th>Submitted On</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (ts of pendingTimesheets; track ts.id) {
+        <tr>
+          <td>
+            <strong>{{ ts.userName }}</strong>
+            <div class="user-id">#{{ ts.userId }}</div>
+          </td>
+          <td>
+            <strong>{{ ts.projectCode }}</strong>
+            <div class="project-name">{{ ts.projectName }}</div>
+          </td>
+          <td>{{ ts.date | date:'yyyy-MM-dd' }}</td>
+          <td>
+            <span class="hours-badge">{{ ts.hoursWorked }}h</span>
+          </td>
+          <td class="description">
+            {{ ts.description || 'N/A' }}
+          </td>
+          <td>{{ ts.createdAt | date:'short' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="'status-' + ts.status.toLowerCase()">
+              {{ ts.status }}
+            </span>
+          </td>
+          <td class="actions">
+            <button type="button" class="btn-action btn-approve" (click)="approveTimesheet(ts.id)" [disabled]="loading"
+              title="Approve this timesheet">
+              ✓ Approve
+            </button>
+            <button type="button" class="btn-action btn-reject" (click)="openRejectModal(ts.id)" [disabled]="loading"
+              title="Reject this timesheet">
+              ✗ Reject
+            </button>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  } @else if (!loading) {
+  <div class="empty-state">
+    <div class="empty-icon">📭</div>
+    <h3>No Pending Timesheets</h3>
+    <p>All timesheets have been reviewed. Great job!</p>
+  </div>
+  }
+
+  <!-- Rejection Modal -->
+  @if (showRejectModal) {
+  <div class="modal-overlay" (click)="closeRejectModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Reject Timesheet</h3>
+        <button type="button" class="close-btn" (click)="closeRejectModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="warning">⚠️ You are about to reject this timesheet. Please provide mandatory comments explaining the
+          reason for rejection.</p>
+
+        <div class="form-group">
+          <label for="comments">Rejection Comments *</label>
+          <textarea id="comments" [(ngModel)]="rejectionComments" placeholder="Enter detailed comments for rejection..."
+            rows="6" class="form-control"></textarea>
+          <span class="char-count">{{ rejectionComments.length }}/500 characters</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeRejectModal()" [disabled]="rejectLoading">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-danger" (click)="submitReject()"
+          [disabled]="!rejectionComments.trim() || rejectLoading">
+          {{ rejectLoading ? '⏳ Processing...' : '✗ Reject Timesheet' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

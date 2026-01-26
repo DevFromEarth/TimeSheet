@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { 
-  Timesheet, 
-  CreateTimesheetDto, 
-  UpdateTimesheetDto, 
+import {
+  Timesheet,
+  CreateTimesheetDto,
+  UpdateTimesheetDto,
   SubmitTimesheetDto,
-  RejectTimesheetDto 
+  RejectTimesheetDto
 } from '../models/timesheet.model';
 import { ApiService } from './api.service';
 
@@ -37,6 +37,10 @@ export class TimesheetService extends ApiService {
     return this.delete<void>(`timesheets/${id}`);
   }
 
+  createTimesheetsBatch(dtos: CreateTimesheetDto[]): Observable<void> {
+    return this.post<void>('timesheets/daily', dtos);
+  }
+
   submitTimesheets(dto: SubmitTimesheetDto): Observable<void> {
     return this.post<void>('timesheets/submit', dto);
   }
@@ -45,7 +49,7 @@ export class TimesheetService extends ApiService {
     return this.post<void>(`timesheets/${id}/approve`, {});
   }
 
-  rejectTimesheet(id: number, dto: RejectTimesheetDto): Observable<void> {
-    return this.post<void>(`timesheets/${id}/reject`, dto);
+  rejectTimesheet(id: number, rejectionComments: string): Observable<void> {
+    return this.post<void>(`timesheets/${id}/reject`, { rejectionComments });
   }
 }

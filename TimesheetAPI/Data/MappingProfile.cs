@@ -35,5 +35,7 @@ public class MappingProfile : Profile
         CreateMap<CreateTimesheetDto, Timesheet>();
         CreateMap<UpdateTimesheetDto, Timesheet>()
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
-    }
+
+		CreateMap<User, GetEmployeeDto>();
+	}
 }

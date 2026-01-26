@@ -2,8 +2,8 @@ import { Routes } from '@angular/router';
 import { authGuard, roleGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  { 
-    path: 'login', 
+  {
+    path: 'login',
     loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
   },
   {
@@ -12,7 +12,7 @@ export const routes: Routes = [
     children: [
       {
         path: 'timesheets',
-        loadComponent: () => import('./features/employee/timesheet-entry.component').then(m => m.TimesheetEntryComponent)
+        loadComponent: () => import('./features/employee/timesheet-submission/timesheet-submission.component').then(m => m.TimesheetSubmissionComponent)
       },
       { path: '', redirectTo: 'timesheets', pathMatch: 'full' }
     ]
@@ -23,15 +23,15 @@ export const routes: Routes = [
     children: [
       {
         path: 'projects',
-        loadComponent: () => import('./features/manager/project-management.component').then(m => m.ProjectManagementComponent)
+        loadComponent: () => import('./features/manager/project-management/project-management.component').then(m => m.ProjectManagementComponent)
       },
       {
         path: 'assignments',
-        loadComponent: () => import('./features/manager/assignment-management.component').then(m => m.AssignmentManagementComponent)
+        loadComponent: () => import('./features/manager/assignment-management/assignment-management.component').then(m => m.AssignmentManagementComponent)
       },
       {
         path: 'approvals',
-        loadComponent: () => import('./features/manager/timesheet-approval.component').then(m => m.TimesheetApprovalComponent)
+        loadComponent: () => import('./features/manager/timesheet-approval/timesheet-approval.component').then(m => m.TimesheetApprovalComponent)
       },
       {
         path: 'reports',

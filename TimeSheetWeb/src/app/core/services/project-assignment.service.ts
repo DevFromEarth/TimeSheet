@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { 
-  ProjectAssignment, 
-  CreateProjectAssignmentDto, 
-  UpdateProjectAssignmentDto 
+import {
+  ProjectAssignment,
+  CreateProjectAssignmentDto,
+  UpdateProjectAssignmentDto
 } from '../models/project-assignment.model';
 import { ApiService } from './api.service';
 
@@ -12,14 +12,14 @@ import { ApiService } from './api.service';
 })
 export class ProjectAssignmentService extends ApiService {
   getUserAssignments(userId: number, activeOnly: boolean = false): Observable<ProjectAssignment[]> {
-    const url = activeOnly 
+    const url = activeOnly
       ? `projectassignments/user/${userId}?activeOnly=true`
       : `projectassignments/user/${userId}`;
     return this.get<ProjectAssignment[]>(url);
   }
 
-  getProjectAssignments(projectId: number): Observable<ProjectAssignment[]> {
-    return this.get<ProjectAssignment[]>(`projectassignments/project/${projectId}`);
+  getProjectAssignments(): Observable<ProjectAssignment[]> {
+    return this.get<ProjectAssignment[]>(`ProjectAssignments/`);
   }
 
   createAssignment(dto: CreateProjectAssignmentDto): Observable<ProjectAssignment> {

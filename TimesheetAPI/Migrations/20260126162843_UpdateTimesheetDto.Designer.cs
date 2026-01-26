@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TimesheetAPI.Data;
 
@@ -11,9 +12,11 @@ using TimesheetAPI.Data;
 namespace TimesheetAPI.Migrations
 {
     [DbContext(typeof(TimesheetDbContext))]
-    partial class TimesheetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260126162843_UpdateTimesheetDto")]
+    partial class UpdateTimesheetDto
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,7 +72,7 @@ namespace TimesheetAPI.Migrations
                         {
                             Id = 1,
                             ClientName = "Client A",
-                            CreatedAt = new DateTime(2026, 1, 26, 17, 13, 19, 916, DateTimeKind.Utc).AddTicks(1899),
+                            CreatedAt = new DateTime(2026, 1, 26, 16, 28, 42, 779, DateTimeKind.Utc).AddTicks(1587),
                             IsActive = true,
                             IsBillable = true,
                             ProjectCode = "PROJ001",
@@ -79,7 +82,7 @@ namespace TimesheetAPI.Migrations
                         {
                             Id = 2,
                             ClientName = "Internal",
-                            CreatedAt = new DateTime(2026, 1, 26, 17, 13, 19, 916, DateTimeKind.Utc).AddTicks(1901),
+                            CreatedAt = new DateTime(2026, 1, 26, 16, 28, 42, 779, DateTimeKind.Utc).AddTicks(1591),
                             IsActive = true,
                             IsBillable = false,
                             ProjectCode = "PROJ002",
@@ -165,8 +168,17 @@ namespace TimesheetAPI.Migrations
                     b.Property<DateTime?>("SubmittedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal>("TotalHoursWorked")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("WeekEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("WeekStartDate")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -223,7 +235,7 @@ namespace TimesheetAPI.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 1, 26, 17, 13, 19, 916, DateTimeKind.Utc).AddTicks(1763),
+                            CreatedAt = new DateTime(2026, 1, 26, 16, 28, 42, 779, DateTimeKind.Utc).AddTicks(1392),
                             Email = "manager@example.com",
                             IsActive = true,
                             Name = "Manager User",
@@ -233,7 +245,7 @@ namespace TimesheetAPI.Migrations
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2026, 1, 26, 17, 13, 19, 916, DateTimeKind.Utc).AddTicks(1766),
+                            CreatedAt = new DateTime(2026, 1, 26, 16, 28, 42, 779, DateTimeKind.Utc).AddTicks(1397),
                             Email = "employee@example.com",
                             IsActive = true,
                             Name = "Employee User",

@@ -47,3 +47,16 @@ public class RejectTimesheetDto
     public int TimesheetId { get; set; }
     public string RejectionComments { get; set; } = string.Empty;
 }
+
+public class SubmitWeekTimesheetDto
+{
+    public DateTime WeekStartDate { get; set; } // Should be a Monday
+}
+
+public class DailyTimesheetEntryDto
+{
+    public int ProjectId { get; set; }
+    public DateTime Date { get; set; } // Specific day
+    public decimal HoursWorked { get; set; } // Hours for the day
+    public string Description { get; set; } = string.Empty;
+}

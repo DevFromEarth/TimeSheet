@@ -5,6 +5,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { ProjectAssignmentService } from '../../../core/services/project-assignment.service';
 import { ProjectService } from '../../../core/services/project.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { UserService } from '../../../core/services/user.service';
 import { ProjectAssignment, CreateProjectAssignmentDto, UpdateProjectAssignmentDto } from '../../../core/models/project-assignment.model';
 import { Project } from '../../../core/models/project.model';
 import { User } from '../../../core/models/user.model';
@@ -38,6 +39,7 @@ export class AssignmentManagementComponent implements OnInit, OnDestroy {
     private assignmentService: ProjectAssignmentService,
     private projectService: ProjectService,
     private authService: AuthService,
+    private userService: UserService,
     private fb: FormBuilder
   ) {
     this.assignmentForm = this.fb.group({
@@ -87,14 +89,21 @@ export class AssignmentManagementComponent implements OnInit, OnDestroy {
   }
 
   private loadEmployees(): void {
-    // Mock employee data - In production, create a user service to fetch employees
-    this.employees = [
-      { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Employee', isActive: true },
-      { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'Employee', isActive: true },
-      { id: 3, name: 'Bob Johnson', email: 'bob@example.com', role: 'Employee', isActive: true },
-      { id: 4, name: 'Alice Brown', email: 'alice@example.com', role: 'Employee', isActive: true }
-    ];
-    this.filteredEmployees = this.employees;
+    this.isLoading = true;
+    this.userService.getActiveEmployees()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.employees = data;
+          this.filteredEmployees = data;
+          this.isLoading = false;
+        },
+        error: (err) => {
+          this.errorMessage = 'Failed to load employees';
+          console.error(err);
+          this.isLoading = false;
+        }
+      });
   }
 
   private loadAssignments(): void {
@@ -102,7 +111,7 @@ export class AssignmentManagementComponent implements OnInit, OnDestroy {
     // Load all project assignments or filtered based on context
     if (this.currentUser) {
       // For now, load a default set - in production, you might want to filter
-      this.assignmentService.getProjectAssignments(1)
+      this.assignmentService.getProjectAssignments()
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (data) => {

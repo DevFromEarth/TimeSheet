@@ -22,7 +22,7 @@ public class User
     
     [Required]
     [MaxLength(50)]
-    public string Role { get; set; } = string.Empty; // "Employee" or "Manager"
+    public string Role { get; set; } = string.Empty;
     
     public bool IsActive { get; set; } = true;
     

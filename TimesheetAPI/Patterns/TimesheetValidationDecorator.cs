@@ -106,12 +106,11 @@ public class DailyHoursLimitDecorator : ITimesheetValidator
         if (!baseResult.IsValid)
             return baseResult;
 
-        var totalHours = await _unitOfWork.Timesheets
-            .GetTotalHoursByUserAndDateAsync(userId, dto.Date);
+        var totalHours = await _unitOfWork.Timesheets.GetTotalHoursByUserAndDateAsync(userId, dto.Date);
 
         if (totalHours + dto.HoursWorked > 24)
         {
-            return (false, $"Total hours for the day cannot exceed 24. Current total: {totalHours} hours.");
+            return (false, $"Total hours for {dto.Date:yyyy-MM-dd} exceed 24 hours.");
         }
 
         return (true, string.Empty);
@@ -127,8 +126,7 @@ public class DailyHoursLimitDecorator : ITimesheetValidator
         if (timesheet == null)
             return (false, "Timesheet not found.");
 
-        var totalHours = await _unitOfWork.Timesheets
-            .GetTotalHoursByUserAndDateAsync(userId, dto.Date);
+        var totalHours = await _unitOfWork.Timesheets.GetTotalHoursByUserAndDateAsync(userId, dto.Date);
 
         // Subtract the current timesheet hours if the date hasn't changed
         if (timesheet.Date.Date == dto.Date.Date)
@@ -138,7 +136,7 @@ public class DailyHoursLimitDecorator : ITimesheetValidator
 
         if (totalHours + dto.HoursWorked > 24)
         {
-            return (false, $"Total hours for the day cannot exceed 24. Current total: {totalHours} hours.");
+            return (false, $"Total hours for {dto.Date:yyyy-MM-dd} exceed 24 hours.");
         }
 
         return (true, string.Empty);

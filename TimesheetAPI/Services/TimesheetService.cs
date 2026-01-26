@@ -17,6 +17,7 @@ public interface ITimesheetService
     Task ApproveTimesheetAsync(int timesheetId, int approverId);
     Task RejectTimesheetAsync(int timesheetId, string comments, int approverId);
     Task<IEnumerable<TimesheetDto>> GetPendingTimesheetsAsync();
+    Task CreateDailyTimesheetsAsync(IEnumerable<DailyTimesheetEntryDto> entries, int userId);
 }
 
 public class TimesheetService : ITimesheetService
@@ -80,13 +81,6 @@ public class TimesheetService : ITimesheetService
         if (timesheet.UserId != userId)
             throw new UnauthorizedAccessException("You can only update your own timesheets.");
 
-        if (timesheet.Status != "Draft")
-            throw new InvalidOperationException("Only draft timesheets can be updated.");
-
-        var validation = await _validator.ValidateUpdateAsync(dto, id, userId);
-        if (!validation.IsValid)
-            throw new InvalidOperationException(validation.ErrorMessage);
-
         timesheet.ProjectId = dto.ProjectId;
         timesheet.Date = dto.Date;
         timesheet.HoursWorked = dto.HoursWorked;
@@ -95,8 +89,7 @@ public class TimesheetService : ITimesheetService
         _unitOfWork.Timesheets.Update(timesheet);
         await _unitOfWork.SaveChangesAsync();
 
-        var updated = await _unitOfWork.Timesheets.GetByIdAsync(id);
-        return _mapper.Map<TimesheetDto>(updated);
+        return _mapper.Map<TimesheetDto>(timesheet);
     }
 
     public async Task DeleteTimesheetAsync(int id, int userId)
@@ -182,5 +175,42 @@ public class TimesheetService : ITimesheetService
     {
         var timesheets = await _unitOfWork.Timesheets.GetPendingTimesheetsAsync();
         return _mapper.Map<IEnumerable<TimesheetDto>>(timesheets);
+    }
+
+    public async Task CreateDailyTimesheetsAsync(IEnumerable<DailyTimesheetEntryDto> entries, int userId)
+    {
+        foreach (var entry in entries)
+        {
+            // Use the validator chain for all validations
+            var createDto = new CreateTimesheetDto
+            {
+                ProjectId = entry.ProjectId,
+                Date = entry.Date,
+                HoursWorked = entry.HoursWorked,
+                Description = entry.Description
+            };
+
+            var validation = await _validator.ValidateAsync(createDto, userId);
+            if (!validation.IsValid)
+            {
+                throw new InvalidOperationException($"Validation failed for project {entry.ProjectId} on {entry.Date:yyyy-MM-dd}: {validation.ErrorMessage}");
+            }
+
+            // Create the timesheet entry
+            var timesheet = new Timesheet
+            {
+                UserId = userId,
+                ProjectId = entry.ProjectId,
+                Date = entry.Date,
+                HoursWorked = entry.HoursWorked,
+                Description = entry.Description,
+                Status = "Draft",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.Timesheets.AddAsync(timesheet);
+        }
+
+        await _unitOfWork.SaveChangesAsync();
     }
 }

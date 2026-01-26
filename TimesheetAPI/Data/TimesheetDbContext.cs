@@ -60,8 +60,8 @@ public class TimesheetDbContext : DbContext
                 .HasForeignKey(t => t.ProjectId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasIndex(e => new { e.UserId, e.ProjectId, e.Date }).IsUnique();
-            entity.Property(e => e.HoursWorked).HasColumnType("decimal(5,2)");
+            entity.HasIndex(e => new { e.UserId, e.ProjectId, e.Date }).IsUnique(); // Updated unique index to use Date instead of WeekStartDate and WeekEndDate
+            entity.Property(e => e.HoursWorked).HasColumnType("decimal(5,2)"); // Removed TotalHoursWorked configuration
         });
 
         // Seed initial data

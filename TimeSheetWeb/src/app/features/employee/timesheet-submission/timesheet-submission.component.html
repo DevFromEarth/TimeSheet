@@ -1,0 +1,90 @@
+<div class="timesheet-submission">
+  <h2> Your Timesheets</h2>
+
+  @if (timesheets.length > 0) {
+  <table class="timesheet-list">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Project</th>
+        <th>Hours</th>
+        <th>Description</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (ts of timesheets; track ts.id) {
+      <tr>
+        <td>{{ ts.date | date:'dd-MM-yyyy' }}</td>
+        <td>{{ ts.projectCode }} - {{ ts.projectName }}</td>
+        <td><strong>{{ ts.hoursWorked }}h</strong></td>
+        <td>{{ ts.description }}</td>
+        <td>
+          <span class="status-badge" [ngClass]="'status-' + ts.status.toLowerCase()">
+            {{ ts.status }}
+          </span>
+        </td>
+        <td>
+          @if (ts.status === 'Draft') {
+          <button type="button" (click)="submitDraftTimesheet(ts.id)" [disabled]="loading"
+            title="Submit this timesheet">✓ Submit</button>
+          <button type="button" (click)="deleteTimesheet(ts.id)" [disabled]="loading" title="Delete this timesheet">🗑
+            Delete</button>
+          }
+        </td>
+      </tr>
+      }
+    </tbody>
+  </table>
+  } @else {
+  <div class="empty-state">
+    <p>No timesheets yet. Create one below!</p>
+  </div>
+  }
+
+  <form [formGroup]="timesheetForm" novalidate>
+    <h3>Add New Timesheet Entry</h3>
+    <div formArrayName="entries">
+      @for (entry of entries.controls; track entry; let i = $index) {
+      <div [formGroupName]="i" class="entry-row">
+        <input type="date" formControlName="date"
+          [class.invalid]="entry.get('date')?.invalid && entry.get('date')?.touched" />
+        <select formControlName="projectCode"
+          [class.invalid]="entry.get('projectCode')?.invalid && entry.get('projectCode')?.touched">
+          <option value="" disabled>Select Project</option>
+          @for (project of projects; track project) {
+          <option [value]="project.projectCode">{{ project.projectCode }} - {{ project.projectName }}</option>
+          }
+        </select>
+        <input type="number" formControlName="hours" min="0" max="24" placeholder="Hours"
+          [class.invalid]="entry.get('hours')?.invalid && entry.get('hours')?.touched" />
+        <input type="text" formControlName="description" placeholder="Description"
+          [class.invalid]="entry.get('description')?.invalid && entry.get('description')?.touched" />
+        @if (entries.length > 1) {
+        <button type="button" (click)="removeEntry(i)">
+          Remove
+        </button>
+        }
+      </div>
+      }
+    </div>
+    @if (loading) {
+    <div class="loading">Processing...</div>
+    }
+
+    @if (error) {
+    <div class="error">{{ error }}</div>
+    }
+
+    @if (success) {
+    <div class="success">{{ success }}</div>
+    }
+
+    <div class="button-group">
+      <button type="button" class="btn" (click)="saveAsDraft()" [disabled]="loading">Save as Draft</button>
+      <button type="button" class="btn" (click)="submitTimesheet()" [disabled]="loading">Submit</button>
+      <button type="button" (click)="addEntry()" class="btn-add" [disabled]="loading">Add Another Entry</button>
+    </div>
+  </form>
+</div>

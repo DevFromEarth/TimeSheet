@@ -32,14 +32,14 @@ public class TimesheetsController : ControllerBase
         return Ok(timesheet);
     }
 
-    [HttpGet("pending")]
-    public async Task<ActionResult<IEnumerable<TimesheetDto>>> GetPendingTimesheets()
-    {
-        var timesheets = await _timesheetService.GetPendingTimesheetsAsync();
-        return Ok(timesheets);
-    }
+	[HttpGet("pending")]
+	public async Task<ActionResult<IEnumerable<TimesheetDto>>> GetPendingTimesheets()
+	{
+		var timesheets = await _timesheetService.GetPendingTimesheetsAsync();
+		return Ok(timesheets);
+	}
 
-    [HttpPost]
+	[HttpPost]
     public async Task<ActionResult<TimesheetDto>> CreateTimesheet(
         CreateTimesheetDto dto,
         [FromHeader(Name = "X-User-Id")] int userId)
@@ -150,6 +150,26 @@ public class TimesheetsController : ControllerBase
         {
             await _timesheetService.RejectTimesheetAsync(id, dto.RejectionComments, approverId);
             return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("daily")]
+    public async Task<IActionResult> CreateDailyTimesheets(
+        IEnumerable<DailyTimesheetEntryDto> entries,
+        [FromHeader(Name = "X-User-Id")] int userId)
+    {
+        try
+        {
+            await _timesheetService.CreateDailyTimesheetsAsync(entries, userId);
+            return Ok();
         }
         catch (InvalidOperationException ex)
         {

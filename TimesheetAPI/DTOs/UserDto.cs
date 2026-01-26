@@ -28,3 +28,10 @@ public class LoginResponseDto
     public string Token { get; set; } = string.Empty;
     public UserDto User { get; set; } = null!;
 }
+
+public class GetEmployeeDto
+{
+    public int ID { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+}
