@@ -52,12 +52,4 @@ export class AuthService {
     localStorage.removeItem(this.currentUserKey);
     this.currentUserSubject.next(null);
   }
-
-  isManager(): boolean {
-    return this.currentUserValue?.role === 'Manager';
-  }
-
-  isEmployee(): boolean {
-    return this.currentUserValue?.role === 'Employee';
-  }
 }

@@ -10,24 +10,6 @@ public class ProjectAssignmentRepository : Repository<ProjectAssignment>, IProje
     {
     }
 
-	//public async Task<IEnumerable<ProjectAssignment>> GetAssignmentsByUserIdAsync(int userId)
-	//{
-	//    return await _dbSet
-	//        .Include(pa => pa.Project)
-	//        .Include(pa => pa.User)
-	//        .Where(pa => pa.UserId == userId)
-	//        .ToListAsync();
-	//}
-
-	//public async Task<IEnumerable<ProjectAssignment>> GetAssignmentsByProjectIdAsync(int projectId)
-	//{
-	//    return await _dbSet
-	//        .Include(pa => pa.Project)
-	//        .Include(pa => pa.User)
-	//        .Where(pa => pa.ProjectId == projectId)
-	//        .ToListAsync();
-	//}
-
 	public async Task<IEnumerable<ProjectAssignment>> GetActiveAssignmentsByUserIdAsync()
 	{
 		var now = DateTime.UtcNow;

@@ -1,9 +1,9 @@
 <div class="timesheet-approval">
   <div class="header">
-    <h2>📋 Timesheet Approvals</h2>
+    <h2>Timesheet Approvals</h2>
     <p class="subtitle">Review and approve/reject pending timesheets submitted by employees.</p>
     <button class="btn-refresh" (click)="fetchPendingTimesheets()" [disabled]="loading" title="Refresh list">
-      🔄 Refresh
+      Refresh
     </button>
   </div>
 
@@ -81,7 +81,6 @@
   </div>
   } @else if (!loading) {
   <div class="empty-state">
-    <div class="empty-icon">📭</div>
     <h3>No Pending Timesheets</h3>
     <p>All timesheets have been reviewed. Great job!</p>
   </div>
@@ -97,7 +96,7 @@
       </div>
 
       <div class="modal-body">
-        <p class="warning">⚠️ You are about to reject this timesheet. Please provide mandatory comments explaining the
+        <p class="warning"> You are about to reject this timesheet. Please provide mandatory comments explaining the
           reason for rejection.</p>
 
         <div class="form-group">

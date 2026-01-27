@@ -151,7 +151,7 @@
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       text-align: center;
-      border-top: 4px solid #1976d2;
+      // border-top: 4px solid #1976d2;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
 
       &:hover {
@@ -178,7 +178,7 @@
         border-top-color: #388e3c;
 
         .card-value {
-          color: #388e3c;
+          //color: #388e3c;
         }
       }
 
@@ -186,7 +186,7 @@
         border-top-color: #f57c00;
 
         .card-value {
-          color: #f57c00;
+          //color: #f57c00;
         }
       }
 
@@ -194,7 +194,7 @@
         border-top-color: #7b1fa2;
 
         .card-value {
-          color: #7b1fa2;
+          //color: #7b1fa2;
         }
       }
     }

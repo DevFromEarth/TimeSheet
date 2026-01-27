@@ -77,7 +77,7 @@ public class TimesheetDbContext : DbContext
                 Id = 1,
                 Name = "Manager User",
                 Email = "manager@example.com",
-                Password = "Manager123!", // In production, hash this
+                Password = "Manager123!", 
                 Role = "Manager",
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
@@ -87,7 +87,7 @@ public class TimesheetDbContext : DbContext
                 Id = 2,
                 Name = "Employee User",
                 Email = "employee@example.com",
-                Password = "Employee123!", // In production, hash this
+                Password = "Employee123!",
                 Role = "Employee",
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow

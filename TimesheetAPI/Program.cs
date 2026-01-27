@@ -88,7 +88,7 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowAngularApp");
 
-app.UseAuthentication(); // 🔐 MUST come before Authorization
+app.UseAuthentication(); 
 app.UseAuthorization();
 
 app.MapControllers();
