@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -21,7 +21,7 @@ import { AuthService } from '../../core/services/auth.service';
               formControlName="email" 
               class="form-control"
               placeholder="manager@example.com or employee@example.com"
-              [disabled]="isLoading">
+              [disabled]="isLoading()">
           </div>
 
           <div class="form-group">
@@ -32,15 +32,15 @@ import { AuthService } from '../../core/services/auth.service';
               formControlName="password" 
               class="form-control"
               placeholder="Manager123! or Employee123!"
-              [disabled]="isLoading">
+              [disabled]="isLoading()">
           </div>
 
-          @if (errorMessage) {
-            <div class="alert alert-danger">{{ errorMessage }}</div>
+          @if (errorMessage()) {
+            <div class="alert alert-danger">{{ errorMessage() }}</div>
           }
 
-          <button type="submit" [disabled]="loginForm.invalid || isLoading" class="btn btn-primary">
-            {{ isLoading ? 'Logging in...' : 'Login' }}
+          <button type="submit" [disabled]="loginForm.invalid || isLoading()" class="btn btn-primary">
+            {{ isLoading() ? 'Logging in...' : 'Login' }}
           </button>
         </form>
 
@@ -152,8 +152,8 @@ export class LoginComponent {
   private readonly router = inject(Router);
 
   loginForm: FormGroup;
-  errorMessage = '';
-  isLoading = false;
+  errorMessage = signal('');
+  isLoading = signal(false);
 
   constructor() {
     this.loginForm = this.fb.group({
@@ -164,13 +164,13 @@ export class LoginComponent {
 
   onSubmit() {
     if (this.loginForm.valid) {
-      this.isLoading = true;
-      this.errorMessage = '';
+      this.isLoading.set(true);
+      this.errorMessage.set('');
       const { email, password } = this.loginForm.value;
 
       this.authService.login(email, password).subscribe({
         next: (user) => {
-          this.isLoading = false;
+          this.isLoading.set(false);
           if (user.role === 'Manager') {
             this.router.navigate(['/manager']);
           } else {
@@ -178,14 +178,14 @@ export class LoginComponent {
           }
         },
         error: (error) => {
-          this.isLoading = false;
+          this.isLoading.set(false);
           console.error('Login error:', error);
           if (error.status === 401) {
-            this.errorMessage = 'Invalid email or password';
+            this.errorMessage.set('Invalid email or password');
           } else if (error.status === 0) {
-            this.errorMessage = 'Cannot connect to server. Please check your connection.';
+            this.errorMessage.set('Cannot connect to server. Please check your connection.');
           } else {
-            this.errorMessage = error.error?.message || 'Login failed. Please try again.';
+            this.errorMessage.set(error.error?.message || 'Login failed. Please try again.');
           }
         }
       });

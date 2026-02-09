@@ -2,30 +2,27 @@
   <div class="header">
     <h2>Timesheet Approvals</h2>
     <p class="subtitle">Review and approve/reject pending timesheets submitted by employees.</p>
-    <button class="btn-refresh" (click)="fetchPendingTimesheets()" [disabled]="loading" title="Refresh list">
+    <button class="btn-refresh" (click)="fetchPendingTimesheets()" [disabled]="loading()" title="Refresh list">
       Refresh
     </button>
   </div>
 
-  @if (loading && pendingTimesheets.length === 0) {
-  <div class="loading-state">
-    <p>⏳ Loading pending timesheets...</p>
-  </div>
-  }
+  <app-loader [isLoading]="loading() && pendingTimesheets().length === 0"
+    loadingMessage="Loading pending timesheets..."></app-loader>
 
-  @if (error) {
+  @if (error()) {
   <div class="alert alert-error">
-    <strong>❌ Error:</strong> {{ error }}
+    <strong>❌ Error:</strong> {{ error() }}
   </div>
   }
 
-  @if (success) {
+  @if (success()) {
   <div class="alert alert-success">
-    <strong>✓ Success:</strong> {{ success }}
+    <strong>✓ Success:</strong> {{ success() }}
   </div>
   }
 
-  @if (pendingTimesheets.length > 0) {
+  @if (pendingTimesheets().length > 0) {
   <div class="table-wrapper">
     <table class="timesheets-table">
       <thead>
@@ -41,7 +38,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (ts of pendingTimesheets; track ts.id) {
+        @for (ts of pendingTimesheets(); track ts.id) {
         <tr>
           <td>
             <strong>{{ ts.userName }}</strong>
@@ -65,11 +62,11 @@
             </span>
           </td>
           <td class="actions">
-            <button type="button" class="btn-action btn-approve" (click)="approveTimesheet(ts.id)" [disabled]="loading"
-              title="Approve this timesheet">
+            <button type="button" class="btn-action btn-approve" (click)="approveTimesheet(ts.id)"
+              [disabled]="loading()" title="Approve this timesheet">
               ✓ Approve
             </button>
-            <button type="button" class="btn-action btn-reject" (click)="openRejectModal(ts.id)" [disabled]="loading"
+            <button type="button" class="btn-action btn-reject" (click)="openRejectModal(ts.id)" [disabled]="loading()"
               title="Reject this timesheet">
               ✗ Reject
             </button>
@@ -79,7 +76,7 @@
       </tbody>
     </table>
   </div>
-  } @else if (!loading) {
+  } @else if (!loading()) {
   <div class="empty-state">
     <h3>No Pending Timesheets</h3>
     <p>All timesheets have been reviewed. Great job!</p>
@@ -87,7 +84,7 @@
   }
 
   <!-- Rejection Modal -->
-  @if (showRejectModal) {
+  @if (showRejectModal()) {
   <div class="modal-overlay" (click)="closeRejectModal()">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
@@ -101,19 +98,19 @@
 
         <div class="form-group">
           <label for="comments">Rejection Comments *</label>
-          <textarea id="comments" [(ngModel)]="rejectionComments" placeholder="Enter detailed comments for rejection..."
-            rows="6" class="form-control"></textarea>
-          <span class="char-count">{{ rejectionComments.length }}/500 characters</span>
+          <textarea id="comments" [ngModel]="rejectionComments()" (ngModelChange)="rejectionComments.set($event)"
+            placeholder="Enter detailed comments for rejection..." rows="6" class="form-control"></textarea>
+          <span class="char-count">{{ rejectionComments().length }}/500 characters</span>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeRejectModal()" [disabled]="rejectLoading">
+        <button type="button" class="btn btn-secondary" (click)="closeRejectModal()" [disabled]="rejectLoading()">
           Cancel
         </button>
         <button type="button" class="btn btn-danger" (click)="submitReject()"
-          [disabled]="!rejectionComments.trim() || rejectLoading">
-          {{ rejectLoading ? '⏳ Processing...' : '✗ Reject Timesheet' }}
+          [disabled]="!rejectionComments().trim() || rejectLoading()">
+          {{ rejectLoading() ? '⏳ Processing...' : '✗ Reject Timesheet' }}
         </button>
       </div>
     </div>

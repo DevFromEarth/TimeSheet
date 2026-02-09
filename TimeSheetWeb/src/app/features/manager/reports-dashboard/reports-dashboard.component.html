@@ -5,10 +5,10 @@
   </div>
 
   <!-- Error Message -->
-  @if (error) {
+  @if (error()) {
   <div class="error-alert">
     <span class="error-icon">⚠️</span>
-    <span>{{ error }}</span>
+    <span>{{ error() }}</span>
   </div>
   }
 
@@ -18,65 +18,67 @@
       <div class="filter-grid">
         <div class="form-group">
           <label for="startDate">Start Date</label>
-          <input type="date" id="startDate" formControlName="startDate" class="form-control">
+          <input type="date" id="startDate" formControlName="startDate" class="form-control" [disabled]="isLoading()">
         </div>
 
         <div class="form-group">
           <label for="endDate">End Date</label>
-          <input type="date" id="endDate" formControlName="endDate" class="form-control">
+          <input type="date" id="endDate" formControlName="endDate" class="form-control" [disabled]="isLoading()">
         </div>
 
         <div class="form-group">
           <label for="userId">Employee ID (Optional)</label>
-          <input type="number" id="userId" formControlName="userId" class="form-control"
+          <input type="number" id="userId" formControlName="userId" class="form-control" [disabled]="isLoading()"
             placeholder="Leave blank for all employees">
         </div>
 
         <div class="form-group">
           <label for="projectId">Project ID (Optional)</label>
-          <input type="number" id="projectId" formControlName="projectId" class="form-control"
+          <input type="number" id="projectId" formControlName="projectId" class="form-control" [disabled]="isLoading()"
             placeholder="Leave blank for all projects">
         </div>
       </div>
 
       <div class="filter-actions">
-        <button type="submit" class="btn btn-primary" [disabled]="isLoading">
-          {{ isLoading ? 'Loading...' : 'Generate Report' }}
+        <button type="submit" class="btn btn-primary" [disabled]="isLoading()">
+          {{ isLoading() ? 'Loading...' : 'Generate Report' }}
         </button>
-        <button type="button" class="btn btn-secondary" (click)="resetFilters()" [disabled]="isLoading">
+        <button type="button" class="btn btn-secondary" (click)="resetFilters()" [disabled]="isLoading()">
           Reset Filters
         </button>
       </div>
     </form>
   </div>
 
+  <app-loader [isLoading]="isLoading()" loadingMessage="Generating report..."></app-loader>
+
   <!-- Billable Summary Cards -->
-  @if (billableSummary && !isLoading) {
+  @if (billableSummary() && !isLoading()) {
   <div class="summary-section">
     <h2>Billing Summary</h2>
     <div class="summary-cards">
       <div class="summary-card">
         <div class="card-label">Total Hours</div>
-        <div class="card-value">{{ billableSummary.totalHours | number: '1.2-2' }}</div>
+        <div class="card-value">{{ billableSummary()!.totalHours | number: '1.2-2' }}</div>
       </div>
       <div class="summary-card billable">
         <div class="card-label">Billable Hours</div>
-        <div class="card-value">{{ billableSummary.totalBillableHours | number: '1.2-2' }}</div>
+        <div class="card-value">{{ billableSummary()!.totalBillableHours | number: '1.2-2' }}</div>
       </div>
       <div class="summary-card non-billable">
         <div class="card-label">Non-Billable Hours</div>
-        <div class="card-value">{{ billableSummary.totalNonBillableHours | number: '1.2-2' }}</div>
+        <div class="card-value">{{ billableSummary()!.totalNonBillableHours | number: '1.2-2' }}</div>
       </div>
       <div class="summary-card percentage">
         <div class="card-label">Billable Percentage</div>
-        <div class="card-value">{{ billableSummary.billablePercentage | number: '1.2-2' }}%</div>
+        <div class="card-value">{{ billableSummary()!.billablePercentage | number: '1.2-2' }}%</div>
       </div>
     </div>
   </div>
   }
 
   <!-- Employee Hours Summary Table -->
-  @if (employeeHoursSummary.length > 0 && !isLoading) {
+  @if (employeeHoursSummary().length > 0 && !isLoading()) {
   <div class="table-section">
     <h2>Employee Hours Summary</h2>
     <div class="table-wrapper">
@@ -91,7 +93,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (employee of employeeHoursSummary; track employee.userId) {
+          @for (employee of employeeHoursSummary(); track employee.userId) {
           <tr class="employee-row">
             <td class="employee-name">{{ employee.userName }}</td>
             <td class="text-right">{{ employee.totalHours | number: '1.2-2' }}</td>
@@ -106,13 +108,13 @@
       </table>
     </div>
     <div class="table-info">
-      Total Employees: {{ employeeHoursSummary.length }}
+      Total Employees: {{ employeeHoursSummary().length }}
     </div>
   </div>
   }
 
   <!-- Project Hours Summary Table -->
-  @if (projectHoursSummary.length > 0 && !isLoading) {
+  @if (projectHoursSummary().length > 0 && !isLoading()) {
   <div class="table-section">
     <h2>Project Hours Summary</h2>
     <div class="table-wrapper">
@@ -127,7 +129,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (project of projectHoursSummary; track project.projectId) {
+          @for (project of projectHoursSummary(); track project.projectId) {
           <tr class="project-row">
             <td class="project-code">{{ project.projectCode }}</td>
             <td class="project-name">{{ project.projectName }}</td>
@@ -144,13 +146,13 @@
       </table>
     </div>
     <div class="table-info">
-      Total Projects: {{ projectHoursSummary.length }}
+      Total Projects: {{ projectHoursSummary().length }}
     </div>
   </div>
   }
 
   <!-- Empty State -->
-  @if (!isLoading && employeeHoursSummary.length === 0 && projectHoursSummary.length === 0) {
+  @if (!isLoading() && employeeHoursSummary().length === 0 && projectHoursSummary().length === 0) {
   <div class="empty-state">
     <p>No data available for the selected filters. Try adjusting your date range or filters.</p>
   </div>

@@ -1,7 +1,14 @@
 import { Routes } from '@angular/router';
 import { authGuard, roleGuard } from './core/guards/auth.guard';
+import { managerRoutes } from './features/manager/manager.routes';
+import { employeeRoutes } from './features/employee/employee.routes';
+import { authRoutes } from './features/auth/auth.routes';
 
 export const routes: Routes = [
+  {
+    path: 'auth',
+    children: authRoutes
+  },
   {
     path: 'login',
     loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
@@ -9,36 +16,12 @@ export const routes: Routes = [
   {
     path: 'employee',
     canActivate: [authGuard, roleGuard(['Employee'])],
-    children: [
-      {
-        path: 'timesheets',
-        loadComponent: () => import('./features/employee/timesheet-submission/timesheet-submission.component').then(m => m.TimesheetSubmissionComponent)
-      },
-      { path: '', redirectTo: 'timesheets', pathMatch: 'full' }
-    ]
+    children: employeeRoutes
   },
   {
     path: 'manager',
     canActivate: [authGuard, roleGuard(['Manager'])],
-    children: [
-      {
-        path: 'projects',
-        loadComponent: () => import('./features/manager/project-management/project-management.component').then(m => m.ProjectManagementComponent)
-      },
-      {
-        path: 'assignments',
-        loadComponent: () => import('./features/manager/assignment-management/assignment-management.component').then(m => m.AssignmentManagementComponent)
-      },
-      {
-        path: 'approvals',
-        loadComponent: () => import('./features/manager/timesheet-approval/timesheet-approval.component').then(m => m.TimesheetApprovalComponent)
-      },
-      {
-        path: 'reports',
-        loadComponent: () => import('./features/manager/reports-dashboard/reports-dashboard.component').then(m => m.ReportsDashboardComponent)
-      },
-      { path: '', redirectTo: 'projects', pathMatch: 'full' }
-    ]
+    children: managerRoutes
   },
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: '**', redirectTo: '/login' }

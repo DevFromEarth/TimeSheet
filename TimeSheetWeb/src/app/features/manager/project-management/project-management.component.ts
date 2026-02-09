@@ -1,7 +1,8 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProjectService } from '../../../core/services/project.service';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 
 interface Project {
   id?: number;
@@ -16,27 +17,39 @@ interface Project {
 @Component({
   selector: 'app-project-management',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, LoaderComponent],
   templateUrl: './project-management.component.html',
   styleUrl: './project-management.component.scss'
 })
 export class ProjectManagementComponent implements OnInit {
   projectForm!: FormGroup;
-  projects: Project[] = [];
-  filteredProjects: Project[] = [];
-  loading = false;
-  error: string | null = null;
-  showForm = false;
-  isEditMode = false;
-  searchTerm = '';
-  filterActive = true;
 
-  private editingProjectId: number | null = null;
+  // Signals for state management
+  projects = signal<Project[]>([]);
+  loading = signal(false);
+  error = signal<string | null>(null);
+  showForm = signal(false);
+  isEditMode = signal(false);
+  searchTerm = signal('');
+  filterActive = signal(true);
+  private editingProjectId = signal<number | null>(null);
+
+  // Computed signal for filtered projects
+  filteredProjects = computed(() => {
+    const term = this.searchTerm().toLowerCase();
+    const active = this.filterActive();
+    return this.projects().filter(project => {
+      const matchesSearch =
+        project.projectCode.toLowerCase().includes(term) ||
+        project.projectName.toLowerCase().includes(term);
+      const matchesActiveFilter = !active || project.isActive;
+      return matchesSearch && matchesActiveFilter;
+    });
+  });
 
   constructor(
     private projectService: ProjectService,
-    private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private fb: FormBuilder
   ) {
     this.initializeForm();
   }
@@ -56,41 +69,38 @@ export class ProjectManagementComponent implements OnInit {
   }
 
   loadProjects(): void {
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
     this.projectService.getAllProjects().subscribe({
       next: (data: Project[]) => {
-        this.projects = data;
-        this.applyFilters();
-        this.loading = false;
-        this.cdr.markForCheck();
+        this.projects.set(data);
+        this.loading.set(false);
       },
       error: (err: any) => {
         console.error('Error loading projects:', err);
-        this.error = `Failed to load projects: ${err.message || err.status || 'Unknown error'}`;
-        this.loading = false;
-        this.cdr.markForCheck();
+        this.error.set(`Failed to load projects: ${err.message || err.status || 'Unknown error'}`);
+        this.loading.set(false);
       }
     });
   }
 
   openCreateForm(): void {
-    this.showForm = true;
-    this.isEditMode = false;
-    this.editingProjectId = null;
+    this.showForm.set(true);
+    this.isEditMode.set(false);
+    this.editingProjectId.set(null);
     this.projectForm.reset({ isActive: true, isBillable: false });
     this.projectForm.get('projectCode')?.enable();
   }
 
   closeForm(): void {
-    this.showForm = false;
+    this.showForm.set(false);
     this.projectForm.reset();
   }
 
   editProject(project: Project): void {
-    this.showForm = true;
-    this.isEditMode = true;
-    this.editingProjectId = project.id || null;
+    this.showForm.set(true);
+    this.isEditMode.set(true);
+    this.editingProjectId.set(project.id || null);
     this.projectForm.patchValue(project);
     this.projectForm.get('projectCode')?.disable();
   }
@@ -98,7 +108,7 @@ export class ProjectManagementComponent implements OnInit {
   onSubmit(): void {
     if (!this.projectForm.valid) return;
 
-    if (this.isEditMode && this.editingProjectId) {
+    if (this.isEditMode() && this.editingProjectId()) {
       this.updateProject();
     } else {
       this.createProject();
@@ -109,32 +119,30 @@ export class ProjectManagementComponent implements OnInit {
     const formValue = this.projectForm.value;
     this.projectService.createProject(formValue).subscribe({
       next: (newProject) => {
-        this.projects.push(newProject);
-        this.applyFilters();
+        this.projects.update(projects => [...projects, newProject]);
         this.closeForm();
       },
       error: (err) => {
-        this.error = 'Failed to create project. Please try again.';
+        this.error.set('Failed to create project. Please try again.');
         console.error('Error creating project:', err);
       }
     });
   }
 
   updateProject(): void {
-    if (!this.editingProjectId) return;
+    const id = this.editingProjectId();
+    if (!id) return;
 
     const formValue = this.projectForm.getRawValue();
-    this.projectService.updateProject(this.editingProjectId, formValue).subscribe({
+    this.projectService.updateProject(id, formValue).subscribe({
       next: (updatedProject) => {
-        const index = this.projects.findIndex(p => p.id === this.editingProjectId);
-        if (index !== -1) {
-          this.projects[index] = updatedProject;
-        }
-        this.applyFilters();
+        this.projects.update(projects =>
+          projects.map(p => p.id === id ? updatedProject : p)
+        );
         this.closeForm();
       },
       error: (err) => {
-        this.error = 'Failed to update project. Please try again.';
+        this.error.set('Failed to update project. Please try again.');
         console.error('Error updating project:', err);
       }
     });
@@ -144,36 +152,22 @@ export class ProjectManagementComponent implements OnInit {
     const updatedProject = { ...project, isActive: !project.isActive };
     this.projectService.updateProject(project.id || 0, updatedProject).subscribe({
       next: (result) => {
-        const index = this.projects.findIndex(p => p.id === project.id);
-        if (index !== -1) {
-          this.projects[index] = result;
-        }
-        this.applyFilters();
+        this.projects.update(projects =>
+          projects.map(p => p.id === project.id ? result : p)
+        );
       },
       error: (err) => {
-        this.error = 'Failed to toggle project status. Please try again.';
+        this.error.set('Failed to toggle project status. Please try again.');
         console.error('Error toggling project status:', err);
       }
     });
   }
 
   onSearch(term: string): void {
-    this.searchTerm = term;
-    this.applyFilters();
+    this.searchTerm.set(term);
   }
 
   onFilterChange(value: boolean): void {
-    this.filterActive = value;
-    this.applyFilters();
-  }
-
-  private applyFilters(): void {
-    this.filteredProjects = this.projects.filter(project => {
-      const matchesSearch = project.projectCode.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        project.projectName.toLowerCase().includes(this.searchTerm.toLowerCase());
-      const matchesActiveFilter = !this.filterActive || project.isActive;
-      console.log(matchesSearch, matchesActiveFilter);
-      return matchesSearch && matchesActiveFilter;
-    });
+    this.filterActive.set(value);
   }
 }

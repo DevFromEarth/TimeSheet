@@ -1,24 +1,28 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DatePipe, NgClass } from '@angular/common';
+import { DatePipe, NgClass, CommonModule } from '@angular/common';
 import { TimesheetService } from '../../../core/services/timesheet.service';
 import { ProjectAssignmentService } from '../../../core/services/project-assignment.service';
 import { CreateTimesheetDto, Timesheet } from '../../../core/models/timesheet.model';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 
 @Component({
   selector: 'app-timesheet-submission',
-  imports: [ReactiveFormsModule, DatePipe, NgClass],
+  standalone: true,
+  imports: [ReactiveFormsModule, DatePipe, NgClass, CommonModule, LoaderComponent],
   templateUrl: './timesheet-submission.component.html',
   styleUrls: ['./timesheet-submission.component.scss']
 })
 export class TimesheetSubmissionComponent implements OnInit {
   timesheetForm: FormGroup;
-  projects: any[] = [];
-  error: string = '';
-  success: string = '';
-  loading: boolean = false;
-  timesheets: Timesheet[] = [];
-  userId: number | null = null;
+
+  // Signals for state management
+  projects = signal<any[]>([]);
+  error = signal('');
+  success = signal('');
+  loading = signal(false);
+  timesheets = signal<Timesheet[]>([]);
+  userId = signal<number | null>(null);
 
   constructor(
     private fb: FormBuilder,
@@ -39,7 +43,7 @@ export class TimesheetSubmissionComponent implements OnInit {
 
   getUserId() {
     const currentUser = localStorage.getItem('currentUser');
-    this.userId = currentUser ? JSON.parse(currentUser).id : null;
+    this.userId.set(currentUser ? JSON.parse(currentUser).id : null);
   }
 
   get entries() {
@@ -60,21 +64,23 @@ export class TimesheetSubmissionComponent implements OnInit {
   }
 
   fetchProjects() {
-    if (!this.userId) {
-      this.error = 'User not found.';
+    const id = this.userId();
+    if (!id) {
+      this.error.set('User not found.');
       return;
     }
-    this.projectAssignmentService.getUserAssignments(this.userId, true).subscribe({
-      next: (data: any[]) => this.projects = data,
-      error: () => this.error = 'Failed to load projects.'
+    this.projectAssignmentService.getUserAssignments(id, true).subscribe({
+      next: (data: any[]) => this.projects.set(data),
+      error: () => this.error.set('Failed to load projects.')
     });
   }
 
   fetchTimesheets() {
-    if (!this.userId) return;
-    this.timesheetService.getUserTimesheets(this.userId).subscribe({
-      next: (data) => this.timesheets = data,
-      error: () => this.error = 'Failed to load timesheets.'
+    const id = this.userId();
+    if (!id) return;
+    this.timesheetService.getUserTimesheets(id).subscribe({
+      next: (data) => this.timesheets.set(data),
+      error: () => this.error.set('Failed to load timesheets.')
     });
   }
 
@@ -85,7 +91,6 @@ export class TimesheetSubmissionComponent implements OnInit {
       const key = entry.date + '-' + entry.projectCode;
       if (seen.has(key)) return false;
       seen.add(key);
-      // Sum hours for each project/date
       hoursMap[key] = (hoursMap[key] || 0) + Number(entry.hours);
       if (hoursMap[key] > 24) return false;
     }
@@ -93,19 +98,19 @@ export class TimesheetSubmissionComponent implements OnInit {
   }
 
   saveAsDraft() {
-    this.error = '';
-    this.success = '';
+    this.error.set('');
+    this.success.set('');
     if (!this.validateNoDuplicates()) {
-      this.error = 'Duplicate project/date entries or more than 24 hours for a project in a day are not allowed.';
+      this.error.set('Duplicate project/date entries or more than 24 hours for a project in a day are not allowed.');
       return;
     }
     if (this.entries.invalid) {
-      this.error = 'Please fix form errors.';
+      this.error.set('Please fix form errors.');
       return;
     }
-    this.loading = true;
+    this.loading.set(true);
     const createDtos: CreateTimesheetDto[] = this.entries.value.map((entry: any) => {
-      const project = this.projects.find((p: any) => p.projectCode === entry.projectCode);
+      const project = this.projects().find((p: any) => p.projectCode === entry.projectCode);
       return {
         projectId: project ? project.projectId || project.id : null,
         date: entry.date,
@@ -114,26 +119,24 @@ export class TimesheetSubmissionComponent implements OnInit {
       };
     });
 
-    // Validate all DTOs have projectId
     const invalidDtos = createDtos.filter(dto => !dto.projectId);
     if (invalidDtos.length > 0) {
-      this.loading = false;
-      this.error = 'Project not found for one or more entries.';
+      this.loading.set(false);
+      this.error.set('Project not found for one or more entries.');
       return;
     }
 
-    // Send all entries as a batch
     this.timesheetService.createTimesheetsBatch(createDtos).subscribe({
       next: () => {
-        this.loading = false;
-        this.success = `${createDtos.length} draft timesheet(s) saved.`;
+        this.loading.set(false);
+        this.success.set(`${createDtos.length} draft timesheet(s) saved.`);
         this.entries.clear();
         this.addEntry();
         this.fetchTimesheets();
       },
       error: (err: any) => {
-        this.loading = false;
-        this.error = err?.error?.message || 'Error saving timesheets as draft.';
+        this.loading.set(false);
+        this.error.set(err?.error?.message || 'Error saving timesheets as draft.');
       }
     });
   }
@@ -148,20 +151,18 @@ export class TimesheetSubmissionComponent implements OnInit {
   }
 
   submitTimesheet() {
-    this.error = '';
-    this.success = '';
+    this.error.set('');
+    this.success.set('');
     this.removeEmptyEntries();
-    console.log(this.timesheetForm.invalid);
-    console.log(!this.validateNoDuplicates());
 
     if (this.timesheetForm.invalid || !this.validateNoDuplicates()) {
-      this.error = 'Please fix errors before submitting. (No duplicates or >24h per project/day)';
+      this.error.set('Please fix errors before submitting. (No duplicates or >24h per project/day)');
       return;
     }
-    this.loading = true;
+    this.loading.set(true);
 
     const createDtos: CreateTimesheetDto[] = this.entries.value.map((entry: any) => {
-      const project = this.projects.find((p: any) => p.projectCode === entry.projectCode);
+      const project = this.projects().find((p: any) => p.projectCode === entry.projectCode);
       return {
         projectId: project ? project.projectId || project.id : null,
         date: entry.date,
@@ -170,63 +171,60 @@ export class TimesheetSubmissionComponent implements OnInit {
       };
     });
 
-    // Validate all DTOs have projectId
     const invalidDtos = createDtos.filter(dto => !dto.projectId);
     if (invalidDtos.length > 0) {
-      this.loading = false;
-      this.error = 'Project not found for one or more entries.';
+      this.loading.set(false);
+      this.error.set('Project not found for one or more entries.');
       return;
     }
 
-    // Send all entries as a batch
     this.timesheetService.createTimesheetsBatch(createDtos).subscribe({
       next: () => {
-        this.loading = false;
-        this.success = 'Timesheet(s) submitted successfully.';
+        this.loading.set(false);
+        this.success.set('Timesheet(s) submitted successfully.');
         this.entries.clear();
         this.addEntry();
         this.fetchTimesheets();
       },
       error: (err: any) => {
-        this.loading = false;
-        this.error = err?.error?.message || 'Error submitting timesheets.';
+        this.loading.set(false);
+        this.error.set(err?.error?.message || 'Error submitting timesheets.');
       }
     });
   }
 
   submitDraftTimesheet(id: number) {
-    this.loading = true;
+    this.loading.set(true);
     this.timesheetService.submitTimesheets({ timesheetIds: [id] }).subscribe({
       next: () => {
-        this.loading = false;
-        this.success = 'Timesheet submitted.';
+        this.loading.set(false);
+        this.success.set('Timesheet submitted.');
         this.fetchTimesheets();
       },
       error: (err: any) => {
-        this.loading = false;
-        this.error = err?.error?.message || 'Error submitting timesheet.';
+        this.loading.set(false);
+        this.error.set(err?.error?.message || 'Error submitting timesheet.');
       }
     });
   }
 
   deleteTimesheet(id: number) {
     if (!confirm('Delete this timesheet?')) return;
-    this.loading = true;
+    this.loading.set(true);
     this.timesheetService.deleteTimesheet(id).subscribe({
       next: () => {
-        this.loading = false;
-        this.success = 'Timesheet deleted.';
+        this.loading.set(false);
+        this.success.set('Timesheet deleted.');
         this.fetchTimesheets();
       },
       error: (err: any) => {
-        this.loading = false;
-        this.error = err?.error?.message || 'Error deleting timesheet.';
+        this.loading.set(false);
+        this.error.set(err?.error?.message || 'Error deleting timesheet.');
       }
     });
   }
 
   editTimesheet(ts: Timesheet) {
-    // Populate form with selected timesheet for editing
     this.entries.clear();
     this.entries.push(this.fb.group({
       date: [ts.date, Validators.required],

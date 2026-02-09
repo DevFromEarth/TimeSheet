@@ -1,7 +1,6 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
 import { ProjectAssignmentService } from '../../../core/services/project-assignment.service';
 import { ProjectService } from '../../../core/services/project.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -9,31 +8,31 @@ import { UserService } from '../../../core/services/user.service';
 import { ProjectAssignment, CreateProjectAssignmentDto, UpdateProjectAssignmentDto } from '../../../core/models/project-assignment.model';
 import { Project } from '../../../core/models/project.model';
 import { User } from '../../../core/models/user.model';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 
 @Component({
   selector: 'app-assignment-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, LoaderComponent],
   templateUrl: './assignment-management.component.html',
   styleUrl: './assignment-management.component.scss'
 })
-export class AssignmentManagementComponent implements OnInit, OnDestroy {
-  assignments: ProjectAssignment[] = [];
-  projects: Project[] = [];
-  employees: User[] = [];
-  filteredEmployees: User[] = [];
-
+export class AssignmentManagementComponent implements OnInit {
   assignmentForm: FormGroup;
-  isEditMode = false;
-  selectedAssignmentId: number | null = null;
-  currentUser: User | null = null;
 
-  showForm = false;
-  isLoading = false;
-  errorMessage: string | null = null;
-  successMessage: string | null = null;
+  // Signals for state management
+  assignments = signal<ProjectAssignment[]>([]);
+  projects = signal<Project[]>([]);
+  employees = signal<User[]>([]);
+  filteredEmployees = computed(() => this.employees());
+  currentUser = signal<User | null>(null);
 
-  private destroy$ = new Subject<void>();
+  showForm = signal(false);
+  isEditMode = signal(false);
+  selectedAssignmentId = signal<number | null>(null);
+  isLoading = signal(false);
+  errorMessage = signal<string | null>(null);
+  successMessage = signal<string | null>(null);
 
   constructor(
     private assignmentService: ProjectAssignmentService,
@@ -58,115 +57,98 @@ export class AssignmentManagementComponent implements OnInit, OnDestroy {
     this.loadAssignments();
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
   private loadCurrentUser(): void {
-    this.authService.currentUser
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(user => {
-        this.currentUser = user;
-      });
+    this.authService.currentUser.subscribe(user => {
+      this.currentUser.set(user);
+    });
   }
 
   private loadProjects(): void {
-    this.isLoading = true;
-    this.projectService.getProjects(true)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (data) => {
-          this.projects = data;
-          this.isLoading = false;
-        },
-        error: (err) => {
-          this.errorMessage = 'Failed to load projects';
-          console.error(err);
-          this.isLoading = false;
-        }
-      });
+    this.isLoading.set(true);
+    this.projectService.getProjects(true).subscribe({
+      next: (data) => {
+        this.projects.set(data);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        this.errorMessage.set('Failed to load projects');
+        console.error(err);
+        this.isLoading.set(false);
+      }
+    });
   }
 
   private loadEmployees(): void {
-    this.isLoading = true;
-    this.userService.getActiveEmployees()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (data) => {
-          this.employees = data;
-          this.filteredEmployees = data;
-          this.isLoading = false;
-        },
-        error: (err) => {
-          this.errorMessage = 'Failed to load employees';
-          console.error(err);
-          this.isLoading = false;
-        }
-      });
+    this.isLoading.set(true);
+    this.userService.getActiveEmployees().subscribe({
+      next: (data) => {
+        this.employees.set(data);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        this.errorMessage.set('Failed to load employees');
+        console.error(err);
+        this.isLoading.set(false);
+      }
+    });
   }
 
   private loadAssignments(): void {
-    this.isLoading = true;
-    // Load all project assignments or filtered based on context
-    if (this.currentUser) {
-      // For now, load a default set - in production, you might want to filter
-      this.assignmentService.getProjectAssignments()
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (data) => {
-            this.assignments = data;
-            this.isLoading = false;
-          },
-          error: (err) => {
-            this.errorMessage = 'Failed to load assignments';
-            console.error(err);
-            this.isLoading = false;
-          }
-        });
+    this.isLoading.set(true);
+    if (this.currentUser()) {
+      this.assignmentService.getProjectAssignments().subscribe({
+        next: (data) => {
+          this.assignments.set(data);
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          this.errorMessage.set('Failed to load assignments');
+          console.error(err);
+          this.isLoading.set(false);
+        }
+      });
     }
   }
 
   toggleForm(): void {
-    this.showForm = !this.showForm;
-    if (!this.showForm) {
+    this.showForm.update(value => !value);
+    if (!this.showForm()) {
       this.resetForm();
     }
   }
 
   onSubmit(): void {
     if (this.assignmentForm.invalid) {
-      this.errorMessage = 'Please fill in all required fields';
+      this.errorMessage.set('Please fill in all required fields');
       return;
     }
 
-    this.isLoading = true;
-    this.errorMessage = null;
-    this.successMessage = null;
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
 
     const formData = this.assignmentForm.value;
 
-    if (this.isEditMode && this.selectedAssignmentId) {
+    if (this.isEditMode() && this.selectedAssignmentId()) {
       const updateDto: UpdateProjectAssignmentDto = {
         startDate: new Date(formData.startDate),
         endDate: formData.endDate ? new Date(formData.endDate) : undefined,
         isActive: formData.isActive
       };
 
-      this.assignmentService.updateAssignment(this.selectedAssignmentId, updateDto)
-        .pipe(takeUntil(this.destroy$))
+      this.assignmentService.updateAssignment(this.selectedAssignmentId()!, updateDto)
         .subscribe({
           next: () => {
-            this.successMessage = 'Assignment updated successfully';
+            this.successMessage.set('Assignment updated successfully');
             this.loadAssignments();
             this.resetForm();
-            this.showForm = false;
-            this.isLoading = false;
+            this.showForm.set(false);
+            this.isLoading.set(false);
           },
           error: (err) => {
-            this.errorMessage = err.error?.message || 'Failed to update assignment';
+            this.errorMessage.set(err.error?.message || 'Failed to update assignment');
             console.error(err);
-            this.isLoading = false;
+            this.isLoading.set(false);
           }
         });
     } else {
@@ -178,28 +160,27 @@ export class AssignmentManagementComponent implements OnInit, OnDestroy {
       };
 
       this.assignmentService.createAssignment(createDto)
-        .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
-            this.successMessage = 'Assignment created successfully';
+            this.successMessage.set('Assignment created successfully');
             this.loadAssignments();
             this.resetForm();
-            this.showForm = false;
-            this.isLoading = false;
+            this.showForm.set(false);
+            this.isLoading.set(false);
           },
           error: (err) => {
-            this.errorMessage = err.error?.message || 'Failed to create assignment';
+            this.errorMessage.set(err.error?.message || 'Failed to create assignment');
             console.error(err);
-            this.isLoading = false;
+            this.isLoading.set(false);
           }
         });
     }
   }
 
   editAssignment(assignment: ProjectAssignment): void {
-    this.isEditMode = true;
-    this.selectedAssignmentId = assignment.id;
-    this.showForm = true;
+    this.isEditMode.set(true);
+    this.selectedAssignmentId.set(assignment.id);
+    this.showForm.set(true);
 
     this.assignmentForm.patchValue({
       userId: assignment.userId,
@@ -209,28 +190,26 @@ export class AssignmentManagementComponent implements OnInit, OnDestroy {
       isActive: assignment.isActive
     });
 
-    // Disable userId and projectId in edit mode
     this.assignmentForm.get('userId')?.disable();
     this.assignmentForm.get('projectId')?.disable();
   }
 
   deleteAssignment(): void {
-    if (this.selectedAssignmentId && confirm('Are you sure you want to delete this assignment?')) {
-      this.isLoading = true;
-      this.assignmentService.deleteAssignment(this.selectedAssignmentId)
-        .pipe(takeUntil(this.destroy$))
+    if (this.selectedAssignmentId() && confirm('Are you sure you want to delete this assignment?')) {
+      this.isLoading.set(true);
+      this.assignmentService.deleteAssignment(this.selectedAssignmentId()!)
         .subscribe({
           next: () => {
-            this.successMessage = 'Assignment deleted successfully';
+            this.successMessage.set('Assignment deleted successfully');
             this.loadAssignments();
             this.resetForm();
-            this.showForm = false;
-            this.isLoading = false;
+            this.showForm.set(false);
+            this.isLoading.set(false);
           },
           error: (err) => {
-            this.errorMessage = err.error?.message || 'Failed to delete assignment';
+            this.errorMessage.set(err.error?.message || 'Failed to delete assignment');
             console.error(err);
-            this.isLoading = false;
+            this.isLoading.set(false);
           }
         });
     }
@@ -240,19 +219,19 @@ export class AssignmentManagementComponent implements OnInit, OnDestroy {
     this.assignmentForm.reset({ isActive: true });
     this.assignmentForm.get('userId')?.enable();
     this.assignmentForm.get('projectId')?.enable();
-    this.isEditMode = false;
-    this.selectedAssignmentId = null;
-    this.errorMessage = null;
-    this.successMessage = null;
+    this.isEditMode.set(false);
+    this.selectedAssignmentId.set(null);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
   }
 
   getEmployeeName(userId: number): string {
-    const employee = this.employees.find(e => e.id === userId);
+    const employee = this.employees().find(e => e.id === userId);
     return employee ? employee.name : 'Unknown';
   }
 
   getProjectName(projectId: number): string {
-    const project = this.projects.find(p => p.id === projectId);
+    const project = this.projects().find(p => p.id === projectId);
     return project ? project.projectName : 'Unknown';
   }
 

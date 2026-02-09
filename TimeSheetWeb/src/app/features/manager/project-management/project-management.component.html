@@ -1,15 +1,15 @@
 <div class="container">
   <div class="header">
     <h2>Project Management</h2>
-    <button class="btn-primary" (click)="openCreateForm()">
+    <button class="btn-primary" (click)="openCreateForm()" [disabled]="loading()">
       + New Project
     </button>
   </div>
 
   <!-- Create/Edit Project Form -->
-  @if (showForm) {
+  @if (showForm()) {
   <div class="form-section">
-    <h3>{{ isEditMode ? 'Edit Project' : 'Create New Project' }}</h3>
+    <h3>{{ isEditMode() ? 'Edit Project' : 'Create New Project' }}</h3>
     <form [formGroup]="projectForm" (submit)="onSubmit()">
       <div class="form-group">
         <label for="projectCode">Project Code*</label>
@@ -33,7 +33,7 @@
 
       <div class="form-actions">
         <button type="submit" class="btn-success" [disabled]="!projectForm.valid">
-          {{ isEditMode ? 'Update' : 'Create' }} Project
+          {{ isEditMode() ? 'Update' : 'Create' }} Project
         </button>
         <button type="button" class="btn-secondary" (click)="closeForm()">
           Cancel
@@ -41,36 +41,30 @@
       </div>
     </form>
   </div>
-  }
-
-  <!-- Projects List -->
-  @else {
+  } @else {
   <div class="projects-section">
     <div class="search-filter">
       <input type="text" placeholder="Search by project code or name..." (input)="onSearch($any($event.target).value)"
-        class="search-input" />
+        class="search-input" [disabled]="loading()" />
       <div class="filter-options">
         <label>
-          <input type="checkbox" [checked]="filterActive" (change)="onFilterChange($any($event.target).checked)" />
+          <input type="checkbox" [checked]="filterActive()" (change)="onFilterChange($any($event.target).checked)"
+            [disabled]="loading()" />
           Active Only
         </label>
       </div>
     </div>
 
-    @if (loading) {
-    <div class="loading">
-      Loading projects...
-    </div>
-    }
+    <app-loader [isLoading]="loading()" loadingMessage="Loading projects..."></app-loader>
 
-    @if (error) {
+    @if (error()) {
     <div class="error">
-      {{ error }}
+      {{ error() }}
       <button (click)="loadProjects()" class="btn-retry">Retry</button>
     </div>
     }
 
-    @if (!loading && filteredProjects.length > 0) {
+    @if (!loading() && filteredProjects().length > 0) {
     <div class="projects-list">
       <table>
         <thead>
@@ -84,7 +78,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (project of filteredProjects; track project.id) {
+          @for (project of filteredProjects(); track project.id) {
           <tr [class.inactive]="!project.isActive">
             <td>{{ project.projectCode }}</td>
             <td>{{ project.projectName }}</td>
@@ -115,7 +109,7 @@
     </div>
     }
 
-    @if (!loading && filteredProjects.length === 0 && !error) {
+    @if (!loading() && filteredProjects().length === 0 && !error()) {
     <div class="no-results">
       <p>No projects found.</p>
     </div>

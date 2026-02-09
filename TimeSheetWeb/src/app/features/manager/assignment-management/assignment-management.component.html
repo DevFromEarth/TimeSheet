@@ -1,34 +1,34 @@
 <div class="container">
   <div class="header">
     <h2>Project Assignments</h2>
-    <button class="btn btn-primary" (click)="toggleForm()" [disabled]="isLoading">
-      {{ showForm ? 'Cancel' : 'New Assignment' }}
+    <button class="btn btn-primary" (click)="toggleForm()" [disabled]="isLoading()">
+      {{ showForm() ? 'Cancel' : 'New Assignment' }}
     </button>
   </div>
 
   <!-- Success/Error Messages -->
-  @if (successMessage) {
+  @if (successMessage()) {
   <div class="alert alert-success">
-    {{ successMessage }}
+    {{ successMessage() }}
   </div>
   }
 
-  @if (errorMessage) {
+  @if (errorMessage()) {
   <div class="alert alert-danger">
-    {{ errorMessage }}
+    {{ errorMessage() }}
   </div>
   }
 
   <!-- Assignment Form -->
-  @if (showForm) {
+  @if (showForm()) {
   <div class="form-card">
-    <h3>{{ isEditMode ? 'Edit Assignment' : 'Create New Assignment' }}</h3>
+    <h3>{{ isEditMode() ? 'Edit Assignment' : 'Create New Assignment' }}</h3>
     <form [formGroup]="assignmentForm" (ngSubmit)="onSubmit()">
       <div class="form-group">
         <label for="userId">Employee *</label>
-        <select id="userId" formControlName="userId" class="form-control" [disabled]="isLoading">
+        <select id="userId" formControlName="userId" class="form-control" [disabled]="isLoading()">
           <option value="">Select an employee</option>
-          @for (employee of employees; track employee.id) {
+          @for (employee of employees(); track employee.id) {
           <option [value]="employee.id">{{ employee.name }} ({{ employee.email }})</option>
           }
         </select>
@@ -39,9 +39,9 @@
 
       <div class="form-group">
         <label for="projectId">Project *</label>
-        <select id="projectId" formControlName="projectId" class="form-control" [disabled]="isLoading">
+        <select id="projectId" formControlName="projectId" class="form-control" [disabled]="isLoading()">
           <option value="">Select a project</option>
-          @for (project of projects; track project.id) {
+          @for (project of projects(); track project.id) {
           <option [value]="project.id">{{ project.projectName }}</option>
           }
         </select>
@@ -53,7 +53,7 @@
       <div class="form-row">
         <div class="form-group">
           <label for="startDate">Start Date *</label>
-          <input type="date" id="startDate" formControlName="startDate" class="form-control" [disabled]="isLoading">
+          <input type="date" id="startDate" formControlName="startDate" class="form-control" [disabled]="isLoading()">
           @if (assignmentForm.get('startDate')?.invalid && assignmentForm.get('startDate')?.touched) {
           <small class="error-text">Start Date is required</small>
           }
@@ -61,24 +61,24 @@
 
         <div class="form-group">
           <label for="endDate">End Date</label>
-          <input type="date" id="endDate" formControlName="endDate" class="form-control" [disabled]="isLoading">
+          <input type="date" id="endDate" formControlName="endDate" class="form-control" [disabled]="isLoading()">
         </div>
       </div>
 
       <div class="form-group">
         <label for="isActive">
-          <input type="checkbox" id="isActive" formControlName="isActive" [disabled]="isLoading">
+          <input type="checkbox" id="isActive" formControlName="isActive" [disabled]="isLoading()">
           Active
         </label>
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn btn-success" [disabled]="assignmentForm.invalid || isLoading">
-          {{ isLoading ? 'Saving...' : (isEditMode ? 'Update' : 'Create') }}
+        <button type="submit" class="btn btn-success" [disabled]="assignmentForm.invalid || isLoading()">
+          {{ isLoading() ? 'Saving...' : (isEditMode() ? 'Update' : 'Create') }}
         </button>
-        @if (isEditMode) {
-        <button type="button" class="btn btn-danger" (click)="deleteAssignment()" [disabled]="isLoading">
-          {{ isLoading ? 'Deleting...' : 'Delete' }}
+        @if (isEditMode()) {
+        <button type="button" class="btn btn-danger" (click)="deleteAssignment()" [disabled]="isLoading()">
+          {{ isLoading() ? 'Deleting...' : 'Delete' }}
         </button>
         }
       </div>
@@ -88,11 +88,10 @@
 
   <!-- Assignments List -->
   <div class="assignments-section">
-    @if (isLoading && assignments.length === 0) {
-    <div class="loading">Loading assignments...</div>
-    }
+    <app-loader [isLoading]="isLoading() && assignments().length === 0"
+      loadingMessage="Loading assignments..."></app-loader>
 
-    @if (assignments.length > 0) {
+    @if (assignments().length > 0) {
     <div class="table-responsive">
       <table class="assignments-table">
         <thead>
@@ -106,7 +105,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (assignment of assignments; track assignment.id) {
+          @for (assignment of assignments(); track assignment.id) {
           <tr [class.inactive]="!assignment.isActive">
             <td>{{ assignment.userName }}</td>
             <td>{{ assignment.projectName }}</td>
@@ -118,7 +117,7 @@
               </span>
             </td>
             <td class="actions">
-              <button class="btn btn-sm btn-edit" (click)="editAssignment(assignment)" [disabled]="isLoading">
+              <button class="btn btn-sm btn-edit" (click)="editAssignment(assignment)" [disabled]="isLoading()">
                 Edit
               </button>
             </td>
@@ -127,7 +126,7 @@
         </tbody>
       </table>
     </div>
-    } @else if (!isLoading && assignments.length === 0) {
+    } @else if (!isLoading() && assignments().length === 0) {
     <div class="empty-state">
       <p>No assignments yet. Create one to get started.</p>
     </div>

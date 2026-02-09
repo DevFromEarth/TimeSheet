@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ReportService } from '../../../core/services/report.service';
 import { CommonModule } from '@angular/common';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 
 interface EmployeeHoursSummary {
   userId: number;
@@ -37,18 +38,19 @@ interface ReportFilter {
 @Component({
   selector: 'app-reports-dashboard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, LoaderComponent],
   templateUrl: './reports-dashboard.component.html',
   styleUrls: ['./reports-dashboard.component.scss']
 })
 export class ReportsDashboardComponent implements OnInit {
   filterForm!: FormGroup;
-  employeeHoursSummary: EmployeeHoursSummary[] = [];
-  projectHoursSummary: ProjectHoursSummary[] = [];
-  billableSummary: BillableSummary | null = null;
 
-  isLoading = false;
-  error: string | null = null;
+  // Signals for state management
+  employeeHoursSummary = signal<EmployeeHoursSummary[]>([]);
+  projectHoursSummary = signal<ProjectHoursSummary[]>([]);
+  billableSummary = signal<BillableSummary | null>(null);
+  isLoading = signal(false);
+  error = signal<string | null>(null);
 
   constructor(
     private fb: FormBuilder,
@@ -82,12 +84,12 @@ export class ReportsDashboardComponent implements OnInit {
 
   loadReports(): void {
     if (!this.filterForm.valid) {
-      this.error = 'Please fill in all required fields';
+      this.error.set('Please fill in all required fields');
       return;
     }
 
-    this.isLoading = true;
-    this.error = null;
+    this.isLoading.set(true);
+    this.error.set(null);
 
     const filter: ReportFilter = {
       startDate: new Date(this.filterForm.get('startDate')?.value),
@@ -101,43 +103,55 @@ export class ReportsDashboardComponent implements OnInit {
       this.getProjectHoursSummary(filter),
       this.getBillableSummary(filter)
     ]).finally(() => {
-      this.isLoading = false;
+      this.isLoading.set(false);
     });
   }
 
-  private getEmployeeHoursSummary(filter: ReportFilter): void {
-    this.reportService.getEmployeeHoursSummary(filter).subscribe({
-      next: (data) => {
-        this.employeeHoursSummary = data;
-      },
-      error: (err) => {
-        console.error('Error loading employee hours summary:', err);
-        this.error = 'Failed to load employee hours summary';
-      }
+  private getEmployeeHoursSummary(filter: ReportFilter): Promise<void> {
+    return new Promise((resolve) => {
+      this.reportService.getEmployeeHoursSummary(filter).subscribe({
+        next: (data) => {
+          this.employeeHoursSummary.set(data);
+          resolve();
+        },
+        error: (err) => {
+          console.error('Error loading employee hours summary:', err);
+          this.error.set('Failed to load employee hours summary');
+          resolve();
+        }
+      });
     });
   }
 
-  private getProjectHoursSummary(filter: ReportFilter): void {
-    this.reportService.getProjectHoursSummary(filter).subscribe({
-      next: (data) => {
-        this.projectHoursSummary = data;
-      },
-      error: (err) => {
-        console.error('Error loading project hours summary:', err);
-        this.error = 'Failed to load project hours summary';
-      }
+  private getProjectHoursSummary(filter: ReportFilter): Promise<void> {
+    return new Promise((resolve) => {
+      this.reportService.getProjectHoursSummary(filter).subscribe({
+        next: (data) => {
+          this.projectHoursSummary.set(data);
+          resolve();
+        },
+        error: (err) => {
+          console.error('Error loading project hours summary:', err);
+          this.error.set('Failed to load project hours summary');
+          resolve();
+        }
+      });
     });
   }
 
-  private getBillableSummary(filter: ReportFilter): void {
-    this.reportService.getBillableSummary(filter).subscribe({
-      next: (data) => {
-        this.billableSummary = data;
-      },
-      error: (err) => {
-        console.error('Error loading billable summary:', err);
-        this.error = 'Failed to load billable summary';
-      }
+  private getBillableSummary(filter: ReportFilter): Promise<void> {
+    return new Promise((resolve) => {
+      this.reportService.getBillableSummary(filter).subscribe({
+        next: (data) => {
+          this.billableSummary.set(data);
+          resolve();
+        },
+        error: (err) => {
+          console.error('Error loading billable summary:', err);
+          this.error.set('Failed to load billable summary');
+          resolve();
+        }
+      });
     });
   }
 
